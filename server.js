@@ -13,20 +13,20 @@ const RootQuery = new GraphQLObjectType({
       type: GraphQLString,
       resolve() {
         return 'viewer!';
+      },
+    },
+    node: {
+      type: GraphQLString,
+      args: {
+        id: {
+          type: new GraphQLNonNull(GraphQLID)
+        }
+      },
+      resolve(source, args) {
+        return inMemoryStore[args.key];
       }
     }
   }
-});
-
-const Schema = new GraphQLSchema({
-  query: RootQuery
-});
-
-app.use('/graphql', graphqlHTTP({ schema: Schema, graphiql: true }));
-
-app.listen(3000, () => {
-  console.log({ running: true });
-  console.log('The password is: mypassword1');
 });
 
 let inMemoryStore = {};
@@ -50,4 +50,16 @@ const RootMutation = new GraphQLObjectType({
       }
     }
   },
+});
+
+const Schema = new GraphQLSchema({
+  query: RootQuery,
+  mutation: RootMutation,
+});
+
+app.use('/graphql', graphqlHTTP({ schema: Schema, graphiql: true }));
+
+app.listen(3000, () => {
+  console.log({ running: true });
+  console.log('The password is: mypassword1');
 });
