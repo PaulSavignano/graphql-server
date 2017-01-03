@@ -9,9 +9,9 @@ export const getSql = (query) => {
     console.log(query.values);
     db.all(query.text, query.values, (error, rows) => {
       if (error) {
-        reject(error)
+        reject(error);
       } else {
-        resolve(rows)
+        resolve(rows);
       }
     });
   });

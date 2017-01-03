@@ -4,26 +4,28 @@ const app = express();
 
 import graphqlHTTP from 'express-graphql';
 import { GraphQLSchema, GraphQLObjectType, GraphQLString, GraphQLNonNull, GraphQLID } from 'graphql';
+import { NodeInterface, UserType, PostType } from './src/types';
+import * as loaders from './src/loaders';
 
 const RootQuery = new GraphQLObjectType({
   name: 'RootQuery',
   description: 'The root query',
   fields: {
     viewer: {
-      type: GraphQLString,
-      resolve() {
-        return 'viewer!';
-      },
+      type: NodeInterface,
+      resolve(source, args, context) {
+        return loaders.getNodeById(context);
+      }
     },
     node: {
-      type: GraphQLString,
+      type: NodeInterface,
       args: {
         id: {
           type: new GraphQLNonNull(GraphQLID)
         }
       },
-      resolve(source, args) {
-        return inMemoryStore[args.key];
+      resolve(source, args, context, info) {
+        return loaders.getNodeById(args.id);
       }
     }
   }
@@ -53,6 +55,7 @@ const RootMutation = new GraphQLObjectType({
 });
 
 const Schema = new GraphQLSchema({
+  types: [UserType, PostType],
   query: RootQuery,
   mutation: RootMutation,
 });
