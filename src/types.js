@@ -5,10 +5,14 @@ import {
   GraphQLString,
   GraphQLNonNull,
   GraphQLList,
+  GraphQLBoolean,
+  GraphQLInt,
 } from 'graphql';
 
 import * as tables from './tables';
 import * as loaders from './loaders';
+
+import { connectionDefinitions } from 'graphql-relay';
 
 export const NodeInterface = new GraphQLInterfaceType({
   name: 'Node',
@@ -55,6 +59,37 @@ export const UserType = new GraphQLObjectType({
             return Promise.all(promises);
           })
         }
+      },
+      posts: {
+        type: PostsConnectionType,
+        args: {
+          after: {
+            type: GraphQLString
+          },
+          first: {
+            type: GraphQLInt
+          },
+        },
+        resolve(source, args, context) {
+          return loaders.getPostIdsForUser(source, args, context).then(({rows, pageInfo}) => {
+            const promises = rows.map((row) => {
+              const postNodeId = tables.dbIdToNodeId(row.id, row.__tableName);
+              return loaders.getNodeById(postNodeId).then((node) => {
+                const edge = {
+                  node,
+                  cursor: row.__cursor,
+                };
+                return edge;
+              });
+            });
+            return Promise.all(promises).then((edges) => {
+              return {
+                edges,
+                pageInfo
+              }
+            });
+          })
+        }
       }
     };
   }
@@ -75,4 +110,8 @@ export const PostType = new GraphQLObjectType({
       type: new GraphQLNonNull(GraphQLString),
     }
   }
+});
+
+const { connectionType: PostsConnectionType } = connectionDefinitions({
+  nodeType: PostType
 });
